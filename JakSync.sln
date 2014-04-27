@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JakSync", "JakSync\JakSync.csproj", "{6FB4C889-716B-4BBB-84DB-13142CE8E40B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{49A1D7EA-3BC7-4E5F-9485-4E8CEF649C24}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{0542883E-0536-4520-A8F4-679E4786DFD8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JakSyncServer", "Server\JakSyncServer.csproj", "{EB8D8FCB-3835-4606-8958-FADFDA6E69C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JakSyncCommon", "JakSyncCommon\JakSyncCommon.csproj", "{BAA615D7-A97F-4826-A187-12775C22FE07}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientTest", "ClientTest\ClientTest.csproj", "{981955AE-2379-4512-9605-1E7A4805AC03}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0542883E-0536-4520-A8F4-679E4786DFD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0542883E-0536-4520-A8F4-679E4786DFD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0542883E-0536-4520-A8F4-679E4786DFD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0542883E-0536-4520-A8F4-679E4786DFD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49A1D7EA-3BC7-4E5F-9485-4E8CEF649C24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49A1D7EA-3BC7-4E5F-9485-4E8CEF649C24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49A1D7EA-3BC7-4E5F-9485-4E8CEF649C24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49A1D7EA-3BC7-4E5F-9485-4E8CEF649C24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FB4C889-716B-4BBB-84DB-13142CE8E40B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FB4C889-716B-4BBB-84DB-13142CE8E40B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FB4C889-716B-4BBB-84DB-13142CE8E40B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FB4C889-716B-4BBB-84DB-13142CE8E40B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{981955AE-2379-4512-9605-1E7A4805AC03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{981955AE-2379-4512-9605-1E7A4805AC03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{981955AE-2379-4512-9605-1E7A4805AC03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{981955AE-2379-4512-9605-1E7A4805AC03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAA615D7-A97F-4826-A187-12775C22FE07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAA615D7-A97F-4826-A187-12775C22FE07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAA615D7-A97F-4826-A187-12775C22FE07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAA615D7-A97F-4826-A187-12775C22FE07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB8D8FCB-3835-4606-8958-FADFDA6E69C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB8D8FCB-3835-4606-8958-FADFDA6E69C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB8D8FCB-3835-4606-8958-FADFDA6E69C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB8D8FCB-3835-4606-8958-FADFDA6E69C9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Server\JakSyncServer.csproj
+		Policies = $0
+		$0.StandardHeader = $1
+		$1.Text = 
+		$1.inheritsSet = Apache2License
+		$0.TextStylePolicy = $2
+		$2.inheritsSet = null
+		$2.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $3
+		$3.inheritsSet = Mono
+		$3.inheritsScope = text/x-csharp
+		$3.scope = text/x-csharp
+		$0.TextStylePolicy = $4
+		$4.TabWidth = 4
+		$4.RemoveTrailingWhitespace = True
+		$4.inheritsSet = Mono
+		$4.inheritsScope = text/plain
+		$4.scope = text/plain
+		description = @An Assembly which deconstructs any given object into really, really tiny bits; ships it over to somewhere (say... a compatible server over the network), stores it to a something something (say.... an SQLite DB), then retrives it, reconstructs it, and gives it back to you.\nIn short, it learns how to serialize a class regardless if it's serializable or not, then ships it to a storage space, preferably an SQLite db or MySQL db
+		version = 0.6
+	EndGlobalSection
+EndGlobal

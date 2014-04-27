@@ -1,0 +1,248 @@
+class Rebuild
+	fields:
+		list of (name, value, type)
+	methods:
+		rebuild
+		goDepth
+		addItems
+	constructor:
+		Rebuild
+		Rebuild(list)
+		
+Rebuild is
+	input: list of (name, value, type)
+	
+	myList = list
+return
+
+addItems is
+	input: list of (name, value, type)
+	
+	myList += list
+return
+		
+rebuild is
+	input: list of (name, value, type), typeof(o), curName is nameof(o)
+	out: o is object
+	calls: goDepth
+	
+	o = new object
+	
+	foreach item in list
+		goDepth(ref o, curName, item.name, item.value, item.type)
+return o
+
+goDepth is
+	input: 
+		name is string
+		value is object
+		type is type
+		o is object by referrence
+		curName is string
+	vars:
+		nextField is string = extract from name the field after curName
+		nextFieldInstance
+	
+	while nextField is not last in name
+		nextField = extract from name the field after nextField
+		if o.GetField(nextField) is null
+			o.GetField(nextField) = new object of 
+				typeof(o.GetField(nextField).FieldType)
+			
+	nextFieldInstance = new object of type
+	nextFieldInstance.name = value 
+return
+
+rebuild is
+	input: 
+		o is object byref
+		type is typeof(o)
+		name is string
+	uses:
+		list is list of (name, value, type) byref?
+	vars:
+		instance is object
+	
+	if o is null 
+		o = new object of type
+		
+	if any item.name in list matches name and item.name
+		o = item.value
+	if any item.name in list matches name + #i and item.name
+		rebuild( (cast o to object[])[#i], item.type, item.name)
+
+	fields = o.GetFields
+	
+	//if any field in fields = null
+	//	field = new object of typeof(field)
+		
+	foreach field in fields
+		name += .nameof(field)
+		
+		if field is null
+			instance = new typeof(field)
+		if field is not null
+			instance = field.GetValue(o)
+		
+		if any item.name in list matches name
+			field.SetValue(instance, list.value)
+		if any item.name in list matches name + #i
+			rebuild(instance, typeof(field), name + #i)
+		if field is complex
+			rebuild(instance, typeof(field), name)
+			
+		o.SetField(name, instance)
+		
+		name -= nameof(field)
+return
+
+rebuild is
+	input:
+		o is object byref,
+		name is nameof(object),
+		type is typeof(object)
+	uses:
+		list of (name, value, type)
+	var:
+		instance is object
+		
+	if any item.name in list matches name
+		o = new item.type
+		o = item.value
+		
+	//still do not know how to arrays
+	if any item.name in list matches name + #i
+		if o is null
+			get sizeItem = (name + ##, _, _) from list
+			o = new object[sizeItem.value]
+			
+		o[#i] = new item.type
+		o[#i] = item.value
+		
+	if o is too complex
+		foreach field in o.GetFields()
+			name += field.name
+			
+			instance = new field.type
+			rebuild(instance, name, field.type)
+			
+			field.SetValue(o, instance)
+			
+			name -= field.name
+return // o is byref
+
+thankfully '#' is < than '0'..'9'
+
+item a.b## 2 int[][]
+item a.b#0## 2 int[]
+item a.b#1## 1 int[]
+item a.b#0#0 123 int
+item a.b#0#1 124 int
+item a.b#1#0 17 int
+
+place items in queue
+while queue has items
+	rebuild(rootInstance, rootName, typeof(rootInstance), item)
+		
+rebuild is
+	input:
+		o is object byref,
+		name is nameof(o),
+		type is typeof(o)
+		listitem is (name, value, type)
+	gets called: rebuild(root, rootName, rootType, item#i)
+	
+	if o is null
+		if o is not array
+			o = new type
+		if o is array //unlikely
+			o = new array [locate item which gives array size]
+			extract from list elements with name#i in arrayBuildItem and
+				rebuild(o[i], name#i, typeof(o[i]), arrayBuildItem)
+	if listitem.name begins with name and ends with ##
+		o = new listitem.type[listitem.value]
+		extract from list elements with name#i in arrayBuildItem and
+			rebuild(o[i], name#i, typeof(o[i]), arrayBuildItem)
+	if listitem.name begins with name and ends with #i
+		o[i] = new listitem.type //array should already exist
+		o[i] = listitem.value
+	if listitem.name matches name
+		o[i] = new listitem.type
+		o[i] = listitem.value
+	if listitem.name begins with name but is not end node
+		rebuild(o.GetField(extract next field from listitem.name), name + fieldName,
+			typeof(field))
+		
+	remove listitem from list
+return
+
+===========================================================
+class Rebuild
+	fields:
+		list of (name, value, type)
+		queue of (name, value, type)
+	methods:
+		rebuild
+		set
+		addItems
+	constructor:
+		Rebuild
+		Rebuild(list)
+
+Rebuild is
+	myList = new list
+return
+			
+Rebuild is
+	input: list of (name, value, type)
+	
+	myList = list
+return
+
+addItems is
+	input: list of (name, value, type)
+	
+	myList += list
+return
+
+rebuild is
+	input:
+		rootObject is object byref,
+		rootName is string,
+		rootType is type
+	vars:
+		item is (name, value, type)
+	calls:
+		set
+	
+	myQueue += myList
+	
+	while myQueue hasItems
+		item = pop from myQueue
+		set(item, rootObject, rootName, rootType)
+return
+
+set is
+	input:
+		item is (name, value, type),
+		o is object byref,
+		name is string,
+		type is type
+	vars:
+		listitem is (name, value, type)
+		nextField is string
+	
+	if name matches item.name
+		o = new item.type
+		o = item.value
+	if name matches item.name - ##
+		o = new item.type[item.value]
+		foreach o[i] in o
+			listitem = pop from myQueue
+			set(listitem, o[i], name + #i, o.GetType().GetElementType())
+	if name doesn't match anything
+		nextField = add extra substring from where the match between
+			name and item.name ends until the next "."
+		set(item, o.GetField(nextField).GetValue(o), nextField, 
+			o.GetField(nextField).GetType())
+return

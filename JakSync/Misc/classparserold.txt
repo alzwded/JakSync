@@ -1,0 +1,193 @@
+using System;
+using System.Collections;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters;
+using System.Reflection;
+
+namespace JakSync
+{
+	public struct ClassElement
+	{
+		private string name_;
+		private object payload_;
+		private Type type_;
+		
+		public ClassElement (string _name, object _payload, Type _type)
+		{
+			name_ = _name;
+			payload_ = _payload;
+			type_ = _type;
+		}
+		
+		public string Name 
+		{
+			get { return name_; }
+		}
+		
+		public object Payload
+		{
+			get { return payload_; }
+		}
+		
+		public Type MyType
+		{
+			get { return type_; }
+		}
+		
+		
+	}
+	
+	public class ClassParser
+	{
+		protected static string className_ = "";
+		
+		public static ArrayList ParseClass (object _instance)
+		{
+			Type classType = _instance.GetType ();
+			ArrayList ret = new ArrayList ();
+			
+			className_ += ((className_.Length > 0) ? "." : "") + classType.Name;
+			
+			if (_instance == null)
+			{
+				ret.Add (new ClassElement (
+						className_, null, _instance.GetType ()
+						));
+				
+				return ret;
+			}
+			
+			foreach (FieldInfo t in classType.GetFields (BindingFlags.Public 
+					| BindingFlags.NonPublic | BindingFlags.Instance))
+			{
+				if (t.FieldType is ISerializable)
+				{
+					object me = t.GetValue (_instance);
+					MethodInfo mi = me.GetType().GetMethod("Serialize");
+					
+					MemoryStream ms = new MemoryStream(sizeof(me)); // * 2
+					BinaryFormatter bf = new BinaryFormatter();
+					bf.Serialize(ms, me);
+					
+					ret.Add(new ClassElement(t.Name, ms));
+				}
+				// primitives
+				else if (!(t.FieldType.IsArray) && (
+					t.FieldType == typeof(bool)
+					|| t.FieldType == typeof(int) 
+					|| t.FieldType == typeof(uint)
+					|| t.FieldType == typeof(long)
+					|| t.FieldType == typeof(ulong)
+					|| t.FieldType == typeof(short)
+					|| t.FieldType == typeof(ushort)
+					|| t.FieldType == typeof(byte)
+					|| t.FieldType == typeof(sbyte)
+					|| t.FieldType == typeof(char)
+					|| t.FieldType == typeof(string)
+					|| t.FieldType == typeof(float)
+					|| t.FieldType == typeof(double)
+					|| t.FieldType == typeof(decimal)
+					
+					|| t.FieldType == typeof(Int16)
+					|| t.FieldType == typeof(Int32)
+					|| t.FieldType == typeof(Int64)
+					|| t.FieldType == typeof(UInt16)
+					|| t.FieldType == typeof(UInt32)
+					|| t.FieldType == typeof(UInt64)
+					|| t.FieldType == typeof(IntPtr)
+					|| t.FieldType == typeof(UIntPtr)
+					
+					//not sure if it works
+					|| t.FieldType == typeof(object)
+					))
+				{
+					ret.Add (new ClassElement (className_ + "." + t.Name,
+							t.GetValue (_instance), t.FieldType)
+						);
+				}
+				else if (!(t.FieldType.IsArray))
+				{
+					foreach(FieldInfo fi in t.GetValue(_instance).GetType()
+						.GetMembers())
+					{
+						className_ += "." + fi.Name;
+						
+						ret.AddRange(ParseClass(fi.GetValue(_instance)
+								)
+							);
+						
+						className_ = className_.Substring(0, 
+							className_.LastIndexOf("."));
+					}
+					
+				}
+				else if((t.FieldType.IsArray) &&(
+					t.FieldType == typeof(bool[])
+					|| t.FieldType == typeof(int[]) 
+					|| t.FieldType == typeof(uint[])
+					|| t.FieldType == typeof(long[])
+					|| t.FieldType == typeof(ulong[])
+					|| t.FieldType == typeof(short[])
+					|| t.FieldType == typeof(ushort[])
+					|| t.FieldType == typeof(byte[])
+					|| t.FieldType == typeof(sbyte[])
+					|| t.FieldType == typeof(char[])
+					|| t.FieldType == typeof(string[])
+					|| t.FieldType == typeof(float[])
+					|| t.FieldType == typeof(double[])
+					|| t.FieldType == typeof(decimal[])
+					
+					|| t.FieldType == typeof(Int16[])
+					|| t.FieldType == typeof(Int32[])
+					|| t.FieldType == typeof(Int64[])
+					|| t.FieldType == typeof(UInt16[])
+					|| t.FieldType == typeof(UInt32[])
+					|| t.FieldType == typeof(UInt64[])
+					|| t.FieldType == typeof(IntPtr[])
+					|| t.FieldType == typeof(UIntPtr[])
+					
+					//not sure if it works
+						// migth wanna consider writing a function
+						// which check whether or not a given object
+						// has more members than "object"
+					|| t.FieldType == typeof(object[])
+					))
+				{
+					object[] o = (object [])(t.GetValue(_instance));
+					for(int i = 0; i < o.Length; ++i)
+					{
+						// there should be another if if everything contained is
+						// a primitive or another array
+						ret.Add(new ClassElement (className_ + "." + t.Name 
+								+ "#" + i.ToString(),
+							t.GetValue (_instance), t.FieldType)
+						);
+					}
+					
+				}
+				else
+				{
+					object[] o = (object [])(t.GetValue(_instance));
+					for(int i = 0; i < o.Length; ++i)
+					{
+						foreach(FieldInfo fi in t.GetValue(_instance).GetType().GetMembers())
+						{
+							className_ += "." + fi.Name + "#" + i.ToString();
+							
+							ret.AddRange(ParseClass(fi.GetValue(_instance)
+									)
+								);
+							
+							className_ = className_.Substring(0, className_.LastIndexOf("."));
+						}
+					}
+					
+				}
+			}
+				
+			return ret;
+		}
+	}
+}
+

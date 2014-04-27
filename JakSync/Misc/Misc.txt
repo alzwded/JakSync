@@ -1,0 +1,173 @@
+
+//		public static ArrayList ParseClass (object _instance)
+//		{
+//			Type T = _instance.GetType();
+//			ArrayList ret = new ArrayList ();
+//		
+//			className_ += ((className_.Length > 0) ? "." : "") + _t.Name;
+//			
+//			/*foreach (MemberInfo t in .GetMembers (BindingFlags.Public 
+//					| BindingFlags.NonPublic | BindingFlags.Instance))*/
+//			foreach(FieldInfo t in T.GetFields(BindingFlags.Public 
+//					| BindingFlags.NonPublic | BindingFlags.Instance))
+//			{
+//				if (t.GetType().IsPrimitive && !(t.GetType().IsArray))
+//				{
+//					ret.Add(new ClassElement(className_ + "." + t.Name, 
+//							t.GetValue (_instance)));
+//				} 
+//				else if (t.IsArray) {
+//					//foreach element
+//					object[] val = t.GetValue (_instance);
+//					
+//					for (int i = 0; i < val.Length; ++i) {
+//						ret.Add (new ClassElement (className_ + "." + t.Name + "#" + i.ToString (), val[i]));
+//					}
+//				}
+//				else if (t.GetType().IsSerializable)
+//				{
+//					//end
+//					object me = t.GetValue(_instance);
+//					MethodInfo mi = me.GetType().GetMethod("Serialize");
+//					
+//					MemoryStream ms = new MemoryStream(sizeof(me));
+//					BinaryFormatter bf = new BinaryFormatter();
+//					bf.Serialize(ms, me);
+//					
+//					ret.Add(new ClassElement(t.Name, ms));
+//				}
+//				/*else 
+//				{
+//					//recursion
+//					ret.AddRange (ParseClass (t));
+//				}*/
+//			
+//			}
+//			
+//			foreach (Type t in _t.GetMembers (BindingFlags.Public
+//					| BindingFlags.NonPublic | BindingFlags.Static))
+//			{
+//			}
+//			
+//			if (className_.IndexOf (".") >= 0)
+//				className_ = className_.Substring (0, className_.LastIndexOf ("."));
+//			else
+//				className_ = "";
+//			
+//			return ret;
+//		}
+
+
+
+
+
+
+		protected void doMagic (object _val, Type _type, string _name, object _instance, ref ArrayList ret)
+		{
+			if (_type is ISerializable)
+				{
+					MethodInfo mi = _val.GetType().GetMethod("Serialize");
+					
+					MemoryStream ms = new MemoryStream(); // * 2
+					BinaryFormatter bf = new BinaryFormatter();
+					bf.Serialize(ms, _val);
+					
+					ret.Add(new ClassElement(_name, ms.ToArray, typeof(byte[])));
+				}
+				// primitives
+				else if (!(_type.IsArray) && (
+						_type.IsPrimitive
+					))
+				{
+					ret.Add (new ClassElement (className_ + "." + _name,
+							_val, _type)
+						);
+				}
+				else if (!(_type.IsArray))
+				{
+					foreach(FieldInfo fi in _val.GetType()
+						.GetMembers())
+					{
+						className_ += "." + fi.Name;
+						
+						ret.AddRange(ParseClass(fi.GetValue(_instance)
+								)
+							);
+						
+						className_ = className_.Substring(0, 
+							className_.LastIndexOf("."));
+					}
+					
+				}
+				else if((_type.IsArray) &&(
+						((object [])_val)[0].GetType().IsPrimitive
+					))
+				{
+					object[] o = (object [])(_val);
+					for(int i = 0; i < o.Length; ++i)
+					{
+						// there should be another if if everything contained is
+						// a primitive or another array
+						ret.Add(new ClassElement (className_ + "." + _name 
+								+ "#" + i.ToString(),
+							_val, _type)
+						);
+					}
+					
+				}
+				else
+				{
+					object[] o = (object [])(_val);
+					for(int i = 0; i < o.Length; ++i)
+					{
+						className_ += "." + _name + "#" + i.ToString();
+					
+						doMagic(o[i], o[i].GetType(), o[i].GetType().Name, 
+							_instance, ref ret);
+					
+						className_ = className_.Substring(0, className_.LastIndexOf("."));
+					
+						foreach(FieldInfo fi in _val.GetType().GetMembers())
+						{
+							className_ += "." + fi.Name + "#" + i.ToString();
+							
+							ret.AddRange(ParseClass(fi.GetValue(_instance)
+									)
+								);
+							
+							className_ = className_.Substring(0, className_.LastIndexOf("."));
+						}
+					}
+					
+				}
+		}
+		
+		public ArrayList ParseClass (object _instance)
+		{
+			Type classType = _instance.GetType ();
+			ArrayList ret = new ArrayList ();
+			
+			className_ += ((className_.Length > 0) ? "." : "") + classType.Name;
+			
+			if (_instance == null)
+			{
+				ret.Add (new ClassElement (
+						className_, null, _instance.GetType ()
+						));
+				
+				return ret;
+			}
+			else
+			{
+			}
+			
+			foreach (FieldInfo t in classType.GetFields (BindingFlags.Public 
+					| BindingFlags.NonPublic | BindingFlags.Instance))
+			{
+				doMagic (t.GetValue (_instance), t.FieldType, t.Name, 
+					_instance, ref ret);
+				
+			}
+				
+			return ret;
+		}

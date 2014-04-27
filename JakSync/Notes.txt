@@ -1,0 +1,209 @@
+SQLite version 3 <- can store blobs greater than 1mb
+static fields <-- treat duplicity later
+delegate fields <-- no idea.
+//IntPtr <-- no idea too also
+`-> is ISerializable
+things derived from Delegate are ISerializable, I hope
+
+anon methods are not supported since this compiles to .NET 2.0 because of mono
+
+delegates -- figure out if it's pointing to something included in the transfer,
+	if so then store it's value in a custom type with value string as the name
+	of the field it's pointing to.
+
+I <think> Nullable<T>'s are covered. I think
+
+class parser is not threadsafe
+	fields:
+		list of (name, value, type)
+		
+	methods:
+		traverse
+		
+	properties:
+		getList
+		clearList
+		
+	constructor:
+		emptyConstructor
+		initialElementConstructor
+		
+emptyConstructor is
+	myList = null
+return
+
+initialElementConstructor calls emptyConstructor is
+	input: o is instance of object, name is string
+	
+	traverse(o, name)
+return
+
+procedure traverse is
+	input: o is instance of an object, name is string default nameof(typeof(o))
+	
+	if o is null
+		add(name, NULL, typeof(o))
+	
+	if o is primitive or string
+		add(name, o, typeof(o))
+	
+	if o is array
+		foreach element in cast o to array of objects
+			traverse(element, name + #i)
+			
+	if o is serializable
+		add(name, serialize(o), ISerializable)
+	
+	if o is not primitive nor string nor array nor serializable
+		foreach field in fieldsof(o)
+			traverse(field, name + .nameof(field))
+return
+		
+// slightly optimised becase it skips some recursions --
+// the reason for this is that it treats one dimensional 
+// arrays as pseudo-primitives because one dimensional
+// arrays tend to make up for the bulk of arrays in general
+alternative procedure traverse is
+	input: o is instance of object and not null, 
+		name is string default nameof(typeof(o))
+	uses: myList
+	calls: handleArray
+			
+	if o isPrimitive or string
+		add(name, o, typeof(o))
+		
+	if o isArray
+		handleArray(cast o to array of objects, name)
+		
+	if o is not primitive nor string nor array but is serializable
+		add(name, serialize(o), ISerializable)
+		
+	if o is complex
+		foreach field in o's fields
+			if field isArray
+				handleArray(cast field to array of objects, name + .fieldName)
+						
+			if field isPrimitive or string
+				add(name + .fieldName, valueof(element), typeof(element))
+			
+			if field is serializable
+				add(name, serialize(o), ISerializable)
+				
+			if field is complex
+				traverse(field, name + .fieldName)
+				
+			if field is null
+				add(name + .fieldName, null, typeof(field))
+return
+
+procedure handleArray is inline
+	input: a is an array of objects, name is string
+	uses: myList
+	
+	if myList does not contain (name + ##, countOfArray, int)
+		add(name + ##, count(a), int)
+	
+	foreach element in a
+		if element is not null
+			if element is primitive or string
+				add(name + #i, element, typeof(element))
+				
+			if element is array
+				traverse(element, name + #i)
+				
+			if element is not array nor primitive nor string
+				foreach field in element's fields
+					if field is null
+						add(name + #i + .field, null, typeof(field))
+						
+					if field is primitive or string
+						add(name + #i + .field, valueof(field), typeof(field))
+						
+					if field is serializable
+						add(name + #i + .field, serialize(valueof(field))), 
+							ISerializable)
+						
+					if field is array or is not primitive nor string nor serializable
+						traverse(field, name + #i + .field)
+		if element is null
+			add(name + #i, null, typeof(element))
+return
+
+
+
+class sqlSupervisor
+	fields:
+		db is sqlDataBase
+		users is sqlTable
+		user is string
+		password is encrypted string
+		
+	methods:
+		toDatabase
+		fromDatabase
+		checkUser
+
+checkUser is inline, halting on errors
+	input: user is string, password is encrypted string
+			
+	if user not in users or password does not match
+		throw unauthorized exception
+return
+		
+toDatabase is
+	input: 
+		name is string,
+		list of (name, value, type),
+		user is string,
+		password is encrypted string
+	uses:
+		users
+	calls:
+		checkUser
+	variables:
+		query is list of (name)
+
+	checkUser(user, password)
+		
+	if file(user + _name) does not exist
+		try
+			create file(user + _name) 
+				as sqlTable(name varchar pimary key, type varchar, value blob)
+		catch
+			throw unauthorized exception
+	
+	names = sqlQuery(select name from user_name)
+	
+	foreach item in list
+		if item in names
+			sqlQuery(update user_name set values to item)
+		if item not in names
+			sqlQuery(insert into user_name values from item)
+	catch
+		throw somethingWentWrong exception
+return
+
+fromDatabase is
+	input:
+		user is string,
+		password is encrypted string,
+		list of (name),
+		name is string
+	out:
+		list of (name, value, type)
+	calls:
+		checkUser
+	variables:
+		query is list of (name, type, value)
+		
+	checkUser(user, password)
+	
+	if file(user + _name) does not exist
+		throw formatC exception
+		
+	query = sqlQuery(select name, value, type from user_name where name in list)
+	
+	foreach item in query
+		add(name, value, type)
+return
+		
